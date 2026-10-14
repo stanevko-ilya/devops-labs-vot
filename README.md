@@ -1,147 +1,77 @@
-# template-server v2.2
+# Лабораторные по введению в облачные технологии
 
-Готовый production-ready шаблон сервера на Node.js с модульной архитектурой. Включает:
+Учебный сервис заметок на основе [template-server](https://github.com/stanevko-ilya/template-server). Один и тот же сервис используется в обязательной стартовой работе и в лабораторных 1–3. Задания со звёздочками не входят в проект.
 
-- **Logger** — файловое логирование (по умолчанию) + опциональный буферизованный сток в MongoDB (TTL, запросные логи).
-- **DB** — MongoDB/Mongoose: replica set, пул/таймауты, авто-`syncIndexes`, отдельное соединение для логов.
-- **Cache** — Redis (ioredis) с поддержкой Sentinel (HA), атомарными операциями и graceful-degradation.
-- **API** — REST на Express 5: drain guard, request-ID, защита от инъекций, per-route bodyLimit, JWT-авторизация.
-- **Sockets** — Socket.IO с CORS, JWT-хендшейком и Redis-adapter (мультиреплика).
-- **Notifier** — отдельный процесс фоновых задач: cron-планировщик, распределённый Redis-лок, движок массовой рассылки.
-- **Health** — лёгкий health-сервер для процессов без API.
-- **Swagger** — автодокументация OpenAPI, генерируется из `config.json` методов при каждом старте.
+## Что работает
 
-TLS терминируется внешним nginx + Let's Encrypt (см. [docker/README.md](docker/README.md)).
+- **Фронтенд** — форма и список заметок в `frontend/`.
+- **API** — два экземпляра Node.js из исходного шаблона. `POST /api/notes/add` сохраняет запись, `GET /api/notes` читает записи.
+- **MongoDB** — отдельный сетевой сервис; файлы БД находятся в именованном Docker-томе `mongo-data`.
+- **nginx** — раздаёт фронтенд, завершает HTTPS и балансирует API между портами 3000 и 3001.
 
-> Требуется Node.js >= 22.0.0
+Схема: браузер → nginx → backend-a или backend-b → MongoDB. Фронтенд подключён только к сети `edge`; MongoDB подключена только к `data`. Оба бэкенда входят в обе сети.
 
-## Установка
+## Быстрый запуск
+
+Нужен запущенный Docker Desktop с Linux-контейнерами. В каталоге репозитория:
 
 ```bash
-git clone https://github.com/stanevko-ilya/template-server
-cd template-server
-npm install
-cp .env.example .env
+docker compose up -d --build
+docker compose ps
 ```
 
-Переменные окружения автоматически подставляются в JSON-конфиги модулей через синтаксис `${VAR_NAME}`.
-
-### Основные переменные
-
-| Переменная | Описание | По умолчанию |
-|---|---|---|
-| `DB_URL` | URL подключения к MongoDB | `mongodb://localhost:27017/mydb` |
-| `MONGO_REPLICA_SET` | Имя replica set (пусто = standalone) | — |
-| `API_PORT` | Порт API-сервера | `3000` |
-| `SOCKETS_PORT` | Порт Socket-сервера | `3001` |
-| `HEALTH_PORT` | Порт health-сервера (процесс notifier) | `3001` |
-| `JWT_SECRET` | Секрет для JWT-токенов | — |
-| `REDIS_HOST` / `REDIS_PORT` | Прямое подключение к Redis | `127.0.0.1` / `6379` |
-| `REDIS_SENTINELS_JSON` / `REDIS_MASTER_NAME` | HA через Sentinel | — |
-| `SWAGGER_ENABLED` | `true` — поднять `/api/docs` | `false` |
-| `SERVICE_KEY` | Ключ доступа к Swagger UI и служебным эндпоинтам | — |
-| `TEST_MODE` | `true` — отключить rate limit, увеличить bodyLimit | `false` |
-
-Redis и MongoDB **опциональны на старте**: без Redis кэш работает в degraded-режиме (методы возвращают безопасные значения), без TLS приложение слушает plain HTTP.
-
-## Запуск
+Откройте `https://lab.localhost`. nginx создаёт локальный самоподписанный сертификат при первом запуске. Браузер предупредит, что этому сертификату не доверяют; для учебного локального стенда предупреждение ожидаемо. Для проверок через curl используется `-k`:
 
 ```bash
-# API-процесс (logger → db → cache → api + sockets)
-npm start
+curl -k --noproxy '*' --resolve lab.localhost:443:127.0.0.1 https://lab.localhost/api/notes
+```
 
-# Процесс фоновых задач (logger → db → cache → notifier + health)
-npm run notifier
+Если система не распознаёт имя `lab.localhost`, добавьте в файл hosts строки `127.0.0.1 lab.localhost` и `127.0.0.1 other.localhost` или используйте `curl --resolve`, как в скриптах проверки.
 
-# Линтинг / формат / тесты
+Добавьте заметку через форму и обновите страницу: запись должна остаться на месте. Остановить стенд без удаления данных можно командой `docker compose down`. Команда `docker compose down -v` удалит том MongoDB и все заметки.
+
+## Лаба 0 — сервис
+
+Исходный бэкенд расширен моделью `note` и двумя API-методами. Для локального запуска API отдельно от compose скопируйте `.env.example` в `.env`, запустите MongoDB на `127.0.0.1:27017`, затем выполните `npm ci` и `npm start`. Фронтенд в основном варианте раздаёт nginx из compose.
+
+Проверка сохранения через API:
+
+```bash
+curl -k --noproxy '*' --resolve lab.localhost:443:127.0.0.1 -H 'Content-Type: application/json' -d '{"text":"Проверка базы"}' https://lab.localhost/api/notes/add
+curl -k --noproxy '*' --resolve lab.localhost:443:127.0.0.1 https://lab.localhost/api/notes
+```
+
+## Лаба 1 — nginx
+
+Конфигурация в `docker/nginx.conf`. Проверяются HTTPS и перенаправление с HTTP, раздача статического фронтенда и `/docs/` через `alias`, два виртуальных хоста, `limit_req` с кодом 429, своя 404, Basic Auth для `/admin` и переключение на живой бэкенд после остановки второго.
+
+```bash
+bash lab1/check.sh
+```
+
+Скрипт по очереди выводит результаты каждой проверки. Второй проект доступен по `https://other.localhost`. Пароль администратора создаётся случайно при первом запуске фронтенда и появляется в `docker compose logs frontend`. При необходимости его можно заменить через `docker compose exec frontend htpasswd -B /etc/nginx/security/.htpasswd admin`.
+
+## Лаба 2 — Docker
+
+Хороший образ собирается из `Dockerfile`, намеренно плохой — из `lab2/Dockerfile.bad`. Разбор практик и команды измерения находятся в `lab2/README.md`.
+
+```bash
+bash lab2/measure-builds.sh
+bash lab2/check.sh
+```
+
+Первый скрипт пересобирает оба образа после изменения одной строки кода во временной копии и показывает время и размер. Второй проверяет непривилегированного пользователя, сохранение записи после пересоздания MongoDB и сетевую изоляцию.
+
+## Лаба 3 — CI/CD
+
+Рабочий и учебный плохой пайплайны, а также инструкции по демонстрации красного и зелёного прогонов находятся в `lab3/README.md`.
+
+## Проверки кода
+
+```bash
+npm ci
 npm run lint
-npm run format
 npm test
 ```
 
-### Docker
-
-```bash
-cp .env.docker.example .env.docker
-docker compose up -d --build          # HTTP-стек: nginx (LB) + backend (реплики) + notifier + mongo + redis
-```
-
-Продакшен с TLS/Let's Encrypt — оверлей `docker-compose.prod.yml`, см. [docker/README.md](docker/README.md).
-
-## Модульная структура
-
-Каждый модуль расположен в `modules/` и наследуется от базового класса `Module` (`modules/_class.js`): единый lifecycle `start()`→`stop()`, статус (`on`/`off`/`load`), загрузка `config.json` с подстановкой env. Модули авто-обнаруживаются по `index.js`.
-
-Очередь запуска — `priority_launch_queue` в `index.js`: `logger` → `db` → `cache` → остальные. **Мультипроцесс**: `index.js` исключает `notifier`/`health` (они живут в `notifier.js`); `notifier.js` исключает `api`/`sockets`.
-
-### Заготовленные модули
-
-| Модуль | Описание |
-|---|---|
-| [Logger](modules/logger/) | Файловое логирование + опциональный буферизованный Mongo-сток (флаг `db_enabled`) |
-| [DB](modules/db/) | MongoDB/Mongoose: replica set, пул, `syncIndexes`, отдельное соединение логов |
-| [Cache](modules/cache/) | Redis (ioredis): Sentinel, `get/set/incr/setnx/expire/exists`, graceful-degradation |
-| [API](modules/api/) | Express 5: drain guard, request-ID, injection guard, per-route bodyLimit, JWT |
-| [Sockets](modules/sockets/) | Socket.IO: CORS, JWT-хендшейк, Redis-adapter |
-| [Notifier](modules/notifier/) | Планировщик фоновых задач (cron + распределённый лок), авто-дискавери джоб |
-| [Health](modules/health/) | Минимальный health-сервер `GET /api/ping` |
-
-### Кэш (Redis)
-
-`modules.cache`: `get/set/getJson/del/incr/setnx/expire/exists` + `client`. Все методы при недоступности Redis возвращают безопасные дефолты (не бросают). Sentinel включается через `REDIS_SENTINELS_JSON`.
-
-### Фоновые задачи (Notifier)
-
-Джобы — файлы `modules/notifier/jobs/*.js`, экспортируют:
-
-```js
-module.exports = {
-    name: 'my-job',
-    enabled: true,
-    daily: { hour: 9, minute: 0 },   // ежедневно в 09:00 (config.timezone_offset_hours)
-    // или: interval_minutes: 15,     // каждые 15 минут
-    async run(modules, config) { /* ... */ },
-};
-```
-
-Параллельный запуск защищён внутрипроцессным гардом + распределённым Redis-локом. Тулкит массовой рассылки — `functions/{rateLimiter,batchPipeline,pluralize,notifierHelpers}.js` (token-bucket лимит, пул конкурентности, ретраи с backoff, дедуп через Redis-сеты).
-
-### Swagger
-
-При `SWAGGER_ENABLED=true` спека OpenAPI 3 генерируется из `config.json` методов при каждом старте и отдаётся на `/api/docs?key=SERVICE_KEY`. Авторизация — JWT Bearer (кнопка **Authorize**).
-
-## Утилиты (`functions/`)
-
-| Файл | Описание |
-|---|---|
-| `generateId.js` / `getRandom.js` / `asyncDelay.js` | ID, случайные числа, промис-задержка |
-| `directorySearch.js` | Рекурсивный поиск файлов (флаг `deep` для вложенных маршрутов) |
-| `array.js` / `date.js` / `number.js` / `object.js` | Хелперы по типам данных |
-| `rateLimiter.js` | Token-bucket лимитер скорости + `getRps()` |
-| `batchPipeline.js` | Массовая рассылка: пул конкурентности, ретраи, backoff, abort |
-| `pluralize.js` | Русское склонение + рендер шаблонов сообщений |
-| `notifierHelpers.js` | Дедуп отправок (Redis-сеты) + запись в `notification-log` |
-
-## Безопасность и надёжность API
-
-- **helmet** / **cors** / **express-rate-limit** (глобальный + per-user по JWT, опционально через Redis-стор).
-- **NoSQL-санитайз** тела (рекурсивно вырезает ключи на `$`) — per-route.
-- **Защита от инъекций** в query-параметрах (SQL/XSS-паттерны → 400).
-- **Request-ID** (`crypto.randomUUID`) и расширенное логирование запросов/ответов.
-- **Per-route bodyLimit** (`config.bodyLimit` метода), `array`-тип параметров.
-- **JWT-авторизация** с ролевым доступом (`config.auth.roles`).
-- **Drain guard**: при shutdown новые запросы получают 503, активные дорабатываются (до 5с), затем сервер закрывается.
-
-## Тестирование
-
-[Vitest](https://vitest.dev/), тесты в `tests/`. `npm test`.
-
-- `tests/integration/modules.test.js` — lifecycle всех модулей (logger, db, cache, api, sockets, notifier, health).
-- `tests/integration/api.test.js` — авто-раннер API-методов через `getTest()`.
-- `tests/unit/` — юнит-тесты утилит (rateLimiter, batchPipeline, pluralize, swagger, cache, directorySearch и др.).
-
-Реализуйте `getTest()` в классе метода — раннер подхватит его автоматически (для `auth`-методов Bearer-токен добавляется автоматически).
-
-## Graceful Shutdown
-
-Обработка `SIGTERM`/`SIGINT`: остановка модулей в обратном порядке, drain активных HTTP-запросов, flush логов. Таймаут принудительного выхода — 10 секунд.
+Полный набор тестов требует запущенную MongoDB. В CI она поднимается как отдельный сервис.

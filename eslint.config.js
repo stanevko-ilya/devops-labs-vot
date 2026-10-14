@@ -34,6 +34,12 @@ module.exports = [
         },
     },
     {
+        files: ['frontend/**/*.js'],
+        languageOptions: {
+            globals: globals.browser,
+        },
+    },
+    {
         ignores: ['node_modules/', 'modules/logger/logs/', 'modules/api/public/'],
     },
 ];

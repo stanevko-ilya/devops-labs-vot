@@ -1,0 +1,10 @@
+{
+    "use": true,
+    "method": "post",
+    "params": [
+        { "name": "text", "required": true, "type": "string" }
+    ],
+    "errors": [
+        { "code": 1, "message": "Текст заметки должен содержать от 1 до 280 символов" }
+    ]
+}

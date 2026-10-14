@@ -1,0 +1,57 @@
+# IMAGE задаёт пайплайн: ghcr.io/<владелец>/<репозиторий>:<SHA>.
+services:
+    backend-a:
+        image: ${IMAGE:?Set IMAGE}
+        pull_policy: always
+        environment:
+            API_PORT: '3000'
+            INSTANCE_ID: backend-a
+            DB_URL: mongodb://mongo:27017/labnotes
+        depends_on:
+            mongo:
+                condition: service_healthy
+        networks: [edge, data]
+
+    backend-b:
+        image: ${IMAGE:?Set IMAGE}
+        pull_policy: always
+        environment:
+            API_PORT: '3001'
+            INSTANCE_ID: backend-b
+            DB_URL: mongodb://mongo:27017/labnotes
+        depends_on:
+            mongo:
+                condition: service_healthy
+        networks: [edge, data]
+
+    mongo:
+        image: mongo:7.0.45
+        volumes:
+            - mongo-data:/data/db
+        healthcheck:
+            test: ['CMD', 'mongosh', '--quiet', '--eval', "db.adminCommand('ping').ok"]
+            interval: 5s
+            timeout: 5s
+            retries: 20
+        networks: [data]
+
+    frontend:
+        build:
+            context: ..
+            dockerfile: docker/frontend.Dockerfile
+        ports: ['80:80', '443:443']
+        volumes:
+            - nginx-cert:/etc/nginx/certs
+            - nginx-security:/etc/nginx/security
+        depends_on: [backend-a, backend-b]
+        networks: [edge]
+
+networks:
+    edge: {}
+    data:
+        internal: true
+
+volumes:
+    mongo-data: {}
+    nginx-cert: {}
+    nginx-security: {}

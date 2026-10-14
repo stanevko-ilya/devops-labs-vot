@@ -1,4 +1,5 @@
 {
+    "use": false,
     "port": "${SOCKETS_PORT}",
 
     "cors": { "origin": "*" },

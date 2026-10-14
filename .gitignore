@@ -4,3 +4,6 @@
 .env.docker
 docker/ssl
 swagger.json
+lab1/output
+lab2/output
+lab3/output

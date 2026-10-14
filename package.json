@@ -1,7 +1,7 @@
 {
-    "name": "template-server",
+    "name": "devops-labs-vot",
     "version": "2.2.0",
-    "description": "",
+    "description": "Учебный сервис заметок для лабораторных по облачным технологиям",
     "main": "index.js",
     "scripts": {
         "start": "node index.js",

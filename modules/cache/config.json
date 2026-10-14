@@ -1,4 +1,5 @@
 {
+    "use": false,
     "masterName": "${REDIS_MASTER_NAME}",
     "password": "${REDIS_PASSWORD}",
     "username": "${REDIS_USERNAME}",

@@ -1,0 +1,13 @@
+# Только ручной учебный пример. Здесь специально оставлены плохие практики.
+name: Bad CI demo
+on:
+    workflow_dispatch:
+
+jobs:
+    bad-build:
+        runs-on: ubuntu-latest # Плавающее окружение.
+        steps:
+            - uses: actions/checkout@v4 # Плавающий major-тег вместо commit SHA.
+            - run: npm install # Не воспроизводит зависимости строго из lockfile.
+            - run: docker build -f lab2/Dockerfile.bad -t bad-demo:latest .
+            # Нет lint/test, Trivy, кеша, секретов CI и проверки живого сервиса.

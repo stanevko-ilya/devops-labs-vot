@@ -7,7 +7,9 @@
         "static": "./public"
     },
 
-    "headers": [],
+    "headers": [
+        { "name": "X-Backend-Instance", "value": "${INSTANCE_ID}" }
+    ],
 
     "bodyLimit": "512kb",
     "rateLimit": {
