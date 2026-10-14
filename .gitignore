@@ -1,0 +1,6 @@
+/node_modules
+/modules/logger/logs/*.log
+.env
+.env.docker
+docker/ssl
+swagger.json

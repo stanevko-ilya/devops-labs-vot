@@ -1,0 +1,14 @@
+node_modules
+.git
+.github
+modules/logger/logs
+swagger.json
+docker/ssl
+tests
+.env
+.env.example
+.editorconfig
+.prettierrc
+eslint.config.js
+vitest.config.js
+*.md
