@@ -23,13 +23,13 @@ X-Site: other
 7. limit_req → 429
 Коды ответов: 200 200 200 200 200 200 200 200 429 429 200 429 429 200 429 429 200 429 429 200 429 429 200 429 429 200 429 429 200 429
 8. Останавливаем backend-a, API остаётся доступен
- Container devops-labs-vot-backend-a-1 Stopping 
- Container devops-labs-vot-backend-a-1 Stopped 
+ Container devops-labs-vot-backend-a-1 Stopping
+ Container devops-labs-vot-backend-a-1 Stopped
 При выключенном backend-a: 200
 При выключенном backend-a: 200
 При выключенном backend-a: 200
 Все проверки лабы 1 прошли.
- Container devops-labs-vot-mongo-1 Waiting 
- Container devops-labs-vot-mongo-1 Healthy 
- Container devops-labs-vot-backend-a-1 Starting 
- Container devops-labs-vot-backend-a-1 Started 
+ Container devops-labs-vot-mongo-1 Waiting
+ Container devops-labs-vot-mongo-1 Healthy
+ Container devops-labs-vot-backend-a-1 Starting
+ Container devops-labs-vot-backend-a-1 Started
