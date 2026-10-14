@@ -8,7 +8,9 @@ echo 'Контейнеры:'
 docker compose ps
 
 echo 'Пользователь хорошего образа:'
-docker compose exec -T backend-a whoami | tee /dev/stderr | grep -x node
+user="$(docker compose exec -T backend-a whoami | tr -d '\r')"
+echo "$user"
+[[ "$user" == node ]]
 
 echo 'Проверяем сохранение записи после пересоздания MongoDB:'
 text="persist-$(date +%s)"
