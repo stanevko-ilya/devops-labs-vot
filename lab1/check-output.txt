@@ -1,0 +1,35 @@
+1. HTTP → HTTPS
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.30.5
+Date: Wed, 14 Oct 2026 17:44:52 GMT
+Content-Type: text/html
+Content-Length: 169
+2. Оба экземпляра API
+X-Backend-Instance: backend-b
+X-Backend-Instance: backend-a
+X-Backend-Instance: backend-b
+X-Backend-Instance: backend-a
+X-Backend-Instance: backend-b
+X-Backend-Instance: backend-a
+3. alias /docs/
+/docs/: OK
+4. Виртуальные хосты
+X-Site: other
+Чужой Host: 421
+5. /admin без пароля
+/admin: 401
+6. Своя 404
+/missing-page: 404, своя страница
+7. limit_req → 429
+Коды ответов: 200 200 200 200 200 200 200 200 429 429 200 429 429 200 429 429 200 429 429 200 429 429 200 429 429 200 429 429 200 429
+8. Останавливаем backend-a, API остаётся доступен
+ Container devops-labs-vot-backend-a-1 Stopping 
+ Container devops-labs-vot-backend-a-1 Stopped 
+При выключенном backend-a: 200
+При выключенном backend-a: 200
+При выключенном backend-a: 200
+Все проверки лабы 1 прошли.
+ Container devops-labs-vot-mongo-1 Waiting 
+ Container devops-labs-vot-mongo-1 Healthy 
+ Container devops-labs-vot-backend-a-1 Starting 
+ Container devops-labs-vot-backend-a-1 Started 

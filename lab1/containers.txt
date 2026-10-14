@@ -1,0 +1,5 @@
+NAME                          IMAGE                                                                     COMMAND                  SERVICE     CREATED         STATUS                    PORTS
+devops-labs-vot-backend-a-1   sha256:bef593d0385669cbcd2c427bc367fddf48f964bce44802008e445fce5cc461ce   "docker-entrypoint.s…"   backend-a   4 minutes ago   Up 52 seconds (healthy)   3000-3001/tcp
+devops-labs-vot-backend-b-1   sha256:46020fb9cfae14939e36904705bbbd495578a59f828de5b09c8710c7f037468b   "docker-entrypoint.s…"   backend-b   4 minutes ago   Up 4 minutes (healthy)    3000-3001/tcp
+devops-labs-vot-frontend-1    devops-labs-vot-frontend                                                  "/usr/local/bin/fron…"   frontend    3 minutes ago   Up 3 minutes              0.0.0.0:80->80/tcp, [::]:80->80/tcp, 0.0.0.0:443->443/tcp, [::]:443->443/tcp
+devops-labs-vot-mongo-1       mongo:7.0.45                                                              "docker-entrypoint.s…"   mongo       2 minutes ago   Up 2 minutes (healthy)    27017/tcp
