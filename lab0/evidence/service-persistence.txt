@@ -1,0 +1,4 @@
+POST /api/notes/add: {"response":{"text":"report-2026-10-15","_id":"6ad1196febac28d7efbf7405","createdAt":"2026-10-15T18:20:31.246Z"}}
+GET /api/notes #1: {"response":[{"_id":"6ad1196febac28d7efbf7405","text":"report-2026-10-15","createdAt":"2026-10-15T18:20:31.246Z"},{"_id":"6acfbf1f76974dbfca80118f","text":"persist-1791999775","createdAt":"2026-10-14T17:42:55.966Z"}]}
+GET /api/notes #2: {"response":[{"_id":"6ad1196febac28d7efbf7405","text":"report-2026-10-15","createdAt":"2026-10-15T18:20:31.246Z"},{"_id":"6acfbf1f76974dbfca80118f","text":"persist-1791999775","createdAt":"2026-10-14T17:42:55.966Z"}]}
+RESULT: запись найдена при повторном чтении из MongoDB
