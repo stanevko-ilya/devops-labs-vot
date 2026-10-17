@@ -1,0 +1,241 @@
+Первоначальная сборка обоих образов:
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.bad
+#1 transferring dockerfile: 383B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/node:22
+#2 DONE 0.6s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 116B done
+#3 DONE 0.0s
+
+#4 [1/4] FROM docker.io/library/node:22@sha256:0e5f906573693feaa1e21057ebdcfdb5bd5021f050b2dc7c9deceb629c7da2a8
+#4 resolve docker.io/library/node:22@sha256:0e5f906573693feaa1e21057ebdcfdb5bd5021f050b2dc7c9deceb629c7da2a8 0.0s done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 778.27kB 0.1s done
+#5 DONE 0.2s
+
+#6 [2/4] WORKDIR /app
+#6 CACHED
+
+#7 [3/4] COPY . .
+#7 DONE 0.1s
+
+#8 [4/4] RUN npm install
+#8 14.95
+#8 14.95 added 273 packages, and audited 274 packages in 14s
+#8 14.95
+#8 14.95 71 packages are looking for funding
+#8 14.95   run `npm fund` for details
+#8 14.98
+#8 14.98 21 vulnerabilities (1 low, 7 moderate, 13 high)
+#8 14.98
+#8 14.98 To address all issues, run:
+#8 14.98   npm audit fix
+#8 14.98
+#8 14.98 Run `npm audit` for details.
+#8 14.98 npm notice
+#8 14.98 npm notice New major version of npm available! 10.9.9 -> 12.2.0
+#8 14.98 npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+#8 14.98 npm notice To update run: npm install -g npm@12.2.0
+#8 14.98 npm notice
+#8 DONE 16.0s
+
+#9 exporting to image
+#9 exporting layers
+#9 exporting layers 6.5s done
+#9 exporting manifest sha256:fef0a888084e77d6ed4a2dcccb99f75512f039da35a243347149126daa0b9739 0.0s done
+#9 exporting config sha256:f70526e548512026a5985b386d757e4c0b0a0558286c841e1e5125219ff5bec0 0.0s done
+#9 exporting attestation manifest sha256:51511dd7ca0b5f0870cae93c94c60147aec0088d76ca64d1ee76d10a899fde3d 0.0s done
+#9 exporting manifest list sha256:35724ab32b1a6762962423e4572b7943671334fb63ba5f555319b729a820c2d3 0.0s done
+#9 naming to docker.io/library/lab2-bad:local done
+#9 unpacking to docker.io/library/lab2-bad:local
+#9 unpacking to docker.io/library/lab2-bad:local 5.7s done
+#9 DONE 12.3s
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 918B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/node:22.23.3-alpine3.24
+#2 DONE 0.3s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 116B done
+#3 DONE 0.0s
+
+#4 [dependencies 1/4] FROM docker.io/library/node:22.23.3-alpine3.24@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402
+#4 resolve docker.io/library/node:22.23.3-alpine3.24@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 0.0s done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 3.77kB 0.0s done
+#5 DONE 0.0s
+
+#6 [stage-1 3/7] COPY --from=dependencies /app/node_modules ./node_modules
+#6 CACHED
+
+#7 [stage-1 4/7] COPY --chown=node:node index.js notifier.js modules.js ./
+#7 CACHED
+
+#8 [stage-1 5/7] COPY --chown=node:node functions ./functions
+#8 CACHED
+
+#9 [stage-1 6/7] COPY --chown=node:node modules ./modules
+#9 CACHED
+
+#10 [dependencies 4/4] RUN npm ci --omit=dev --no-audit --no-fund && npm cache clean --force
+#10 CACHED
+
+#11 [dependencies 2/4] WORKDIR /app
+#11 CACHED
+
+#12 [dependencies 3/4] COPY package.json package-lock.json ./
+#12 CACHED
+
+#13 [stage-1 7/7] RUN mkdir -p modules/logger/logs && chown -R node:node modules/logger/logs
+#13 CACHED
+
+#14 exporting to image
+#14 exporting layers done
+#14 exporting manifest sha256:2ee1c23147a1de9b94bade34e47ac0ed050006fe78ea16d18c6e769d953c5cd0 0.0s done
+#14 exporting config sha256:0832d6fc1beabcea011cbed3c289738280ec20225382fd6c611b8b6e76fd2b63 0.0s done
+#14 exporting attestation manifest sha256:ab5d36569a4236d39ef22b690a560337eae6fb375e4db0692e558ba96246df05 0.0s done
+#14 exporting manifest list sha256:36b413ed3f10e35f88a10e9b4a6da7285052ddec9b20cd8243d3154dc5b00ab4 0.0s done
+#14 naming to docker.io/library/lab2-good:local done
+#14 unpacking to docker.io/library/lab2-good:local 0.0s done
+#14 DONE 0.1s
+Повторная сборка после изменения одной строки:
+Плохой образ:
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.bad
+#1 transferring dockerfile: 383B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/node:22
+#2 DONE 0.3s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 116B done
+#3 DONE 0.0s
+
+#4 [1/4] FROM docker.io/library/node:22@sha256:0e5f906573693feaa1e21057ebdcfdb5bd5021f050b2dc7c9deceb629c7da2a8
+#4 resolve docker.io/library/node:22@sha256:0e5f906573693feaa1e21057ebdcfdb5bd5021f050b2dc7c9deceb629c7da2a8 0.0s done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 471.43kB 0.0s done
+#5 DONE 0.0s
+
+#6 [2/4] WORKDIR /app
+#6 CACHED
+
+#7 [3/4] COPY . .
+#7 DONE 4.1s
+
+#8 [4/4] RUN npm install
+#8 10.29
+#8 10.29 added 273 packages, and audited 274 packages in 10s
+#8 10.29
+#8 10.29 71 packages are looking for funding
+#8 10.29   run `npm fund` for details
+#8 10.32
+#8 10.32 21 vulnerabilities (1 low, 7 moderate, 13 high)
+#8 10.32
+#8 10.32 To address all issues, run:
+#8 10.32   npm audit fix
+#8 10.32
+#8 10.32 Run `npm audit` for details.
+#8 10.32 npm notice
+#8 10.32 npm notice New major version of npm available! 10.9.9 -> 12.2.0
+#8 10.32 npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+#8 10.32 npm notice To update run: npm install -g npm@12.2.0
+#8 10.32 npm notice
+#8 DONE 15.7s
+
+#9 exporting to image
+#9 exporting layers
+#9 exporting layers 7.2s done
+#9 exporting manifest sha256:fe6ac85176a5bede2156eff1375845ee4007a13cc7c3579f61fae44d440a8882 0.0s done
+#9 exporting config sha256:2c40975f9d482ae4c157d61ffaf833e15ec58a5d353907207a146f9775b86b28 0.0s done
+#9 exporting attestation manifest sha256:1e4df67f3dcc1e24279a811a5271c5fb09462742dfb0da24d77f6ee54d5ff10f 0.0s done
+#9 exporting manifest list sha256:f96068cec2d7c06e28b55270d990a340b9b3d245035a25136f7d777a6bd2ffca 0.0s done
+#9 naming to docker.io/library/lab2-bad:local done
+#9 unpacking to docker.io/library/lab2-bad:local
+#9 unpacking to docker.io/library/lab2-bad:local 5.2s done
+#9 DONE 12.6s
+
+real	0m33.982s
+user	0m0.077s
+sys	0m0.092s
+Хороший образ:
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 918B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/node:22.23.3-alpine3.24
+#2 DONE 0.6s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 116B done
+#3 DONE 0.0s
+
+#4 [dependencies 1/4] FROM docker.io/library/node:22.23.3-alpine3.24@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402
+#4 resolve docker.io/library/node:22.23.3-alpine3.24@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 0.0s done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 3.77kB 0.0s done
+#5 DONE 0.0s
+
+#6 [dependencies 4/4] RUN npm ci --omit=dev --no-audit --no-fund && npm cache clean --force
+#6 CACHED
+
+#7 [stage-1 3/7] COPY --from=dependencies /app/node_modules ./node_modules
+#7 CACHED
+
+#8 [stage-1 4/7] COPY --chown=node:node index.js notifier.js modules.js ./
+#8 CACHED
+
+#9 [dependencies 2/4] WORKDIR /app
+#9 CACHED
+
+#10 [dependencies 3/4] COPY package.json package-lock.json ./
+#10 CACHED
+
+#11 [stage-1 5/7] COPY --chown=node:node functions ./functions
+#11 CACHED
+
+#12 [stage-1 6/7] COPY --chown=node:node modules ./modules
+#12 DONE 0.7s
+
+#13 [stage-1 7/7] RUN mkdir -p modules/logger/logs && chown -R node:node modules/logger/logs
+#13 DONE 0.3s
+
+#14 exporting to image
+#14 exporting layers
+#14 exporting layers 0.2s done
+#14 exporting manifest sha256:c3def7f3b59aeb9cc37509b2cf58138b0270b28fff55fd5811242d4442341766 0.0s done
+#14 exporting config sha256:da3a8575989a7721c285b05f0f7c4043b9320454e0b51154b725a7a49abfde6d 0.0s done
+#14 exporting attestation manifest sha256:99a3ae2649bda395ad7edd7b5bf7a3064460faad0bdb991761865c48718f2651 0.0s done
+#14 exporting manifest list sha256:20406a139c60dc26525d58fc4bb0a856aa6f6a63e8e805d7834c39abd6e0bd44 0.0s done
+#14 naming to docker.io/library/lab2-good:local
+#14 naming to docker.io/library/lab2-good:local done
+#14 unpacking to docker.io/library/lab2-good:local 0.1s done
+#14 DONE 0.4s
+
+real	0m3.341s
+user	0m0.092s
+sys	0m0.122s
+Размеры в байтах:
+bad=492651140
+good=67954800

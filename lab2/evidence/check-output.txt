@@ -1,0 +1,25 @@
+Контейнеры:
+NAME                          IMAGE                                                                     COMMAND                  SERVICE     CREATED      STATUS                    PORTS
+devops-labs-vot-backend-a-1   sha256:bef593d0385669cbcd2c427bc367fddf48f964bce44802008e445fce5cc461ce   "docker-entrypoint.s…"   backend-a   3 days ago   Up 17 seconds (healthy)   3000-3001/tcp
+devops-labs-vot-backend-b-1   sha256:46020fb9cfae14939e36904705bbbd495578a59f828de5b09c8710c7f037468b   "docker-entrypoint.s…"   backend-b   3 days ago   Up 17 seconds (healthy)   3000-3001/tcp
+devops-labs-vot-frontend-1    sha256:fcfec3d7e9e97b3b50a3884bf8147089d3b83343880140324c0dc36844e6a2c3   "/usr/local/bin/fron…"   frontend    3 days ago   Up 17 seconds             0.0.0.0:80->80/tcp, [::]:80->80/tcp, 0.0.0.0:443->443/tcp, [::]:443->443/tcp
+devops-labs-vot-mongo-1       mongo:7.0.45                                                              "docker-entrypoint.s…"   mongo       3 days ago   Up 24 seconds (healthy)   27017/tcp
+Пользователь хорошего образа:
+node
+Проверяем сохранение записи после пересоздания MongoDB:
+{"response":{"text":"persist-1792261115","_id":"6ad3bbfcf8a8691c77ac5c19","createdAt":"2026-10-17T18:18:36.105Z"}}
+ Container devops-labs-vot-mongo-1 Stopping
+ Container devops-labs-vot-mongo-1 Stopped
+Going to remove devops-labs-vot-mongo-1
+ Container devops-labs-vot-mongo-1 Removing
+ Container devops-labs-vot-mongo-1 Removed
+ Container devops-labs-vot-mongo-1 Creating
+ Container devops-labs-vot-mongo-1 Created
+ Container devops-labs-vot-mongo-1 Starting
+ Container devops-labs-vot-mongo-1 Started
+Контейнер MongoDB заменён: 47f9695db006 → 952188551cc3
+После пересоздания MongoDB запись persist-1792261115 найдена.
+Сетевая изоляция frontend → mongo:
+nc: bad address 'mongo'
+Соединение отклонено: у frontend нет доступа к сети data.
+Проверки лабы 2 прошли.

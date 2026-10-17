@@ -2,9 +2,11 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-tmp="$(mktemp -d)"
-trap 'rm -rf "$tmp"' EXIT
-git archive HEAD | tar -x -C "$tmp"
+tmp_root="$(cd "${TMPDIR:-/tmp}" && pwd -P)"
+tmp="$(mktemp -d "$tmp_root/lab2-measure.XXXXXX")"
+trap 'case "$tmp" in "$tmp_root"/lab2-measure.*) rm -rf -- "$tmp" ;; *) echo "Отказываюсь удалять неожиданный временный путь: $tmp" >&2 ;; esac' EXIT
+# Копируем текущие версии отслеживаемых файлов, включая изменения без коммита.
+git ls-files -z | tar --null -T - -cf - | tar -xf - -C "$tmp"
 
 echo 'Первоначальная сборка обоих образов:'
 docker build -f "$tmp/lab2/Dockerfile.bad" -t lab2-bad:local "$tmp"

@@ -14,11 +14,15 @@ echo "$user"
 
 echo 'Проверяем сохранение записи после пересоздания MongoDB:'
 text="persist-$(date +%s)"
+old_mongo="$(docker compose ps -q mongo)"
 "${main[@]}" -H 'Content-Type: application/json' -d "{\"text\":\"$text\"}" https://lab.localhost/api/notes/add
 echo
 docker compose stop mongo
 docker compose rm -f mongo
 docker compose up -d mongo
+new_mongo="$(docker compose ps -q mongo)"
+[[ -n "$old_mongo" && -n "$new_mongo" && "$old_mongo" != "$new_mongo" ]]
+echo "Контейнер MongoDB заменён: ${old_mongo:0:12} → ${new_mongo:0:12}"
 for _ in {1..30}; do
   if "${main[@]}" https://lab.localhost/api/notes | grep -q "$text"; then
     echo "После пересоздания MongoDB запись $text найдена."
@@ -29,6 +33,7 @@ done
 "${main[@]}" https://lab.localhost/api/notes | grep -q "$text"
 
 echo 'Сетевая изоляция frontend → mongo:'
+docker compose exec -T frontend sh -c 'command -v nc >/dev/null'
 if docker compose exec -T frontend sh -c 'nc -z -w 2 mongo 27017'; then
   echo 'Ошибка: фронтенд видит БД напрямую.' >&2
   exit 1
