@@ -12,14 +12,14 @@
 | Собирается плохой Dockerfile, нет скана | Собирается хороший образ с кешем слоёв, Trivy блокирует CRITICAL |
 | Не проверяется живой сервис | После push образа поднимается compose и выполняется curl |
 
-Хороший пайплайн использует `GITHUB_TOKEN`, который GitHub выдаёт запуску, с минимальными правами для каждой задачи. Пароль или токен в YAML не записываются. Образ публикуется в GHCR с тегом полного SHA коммита.
+Для публикации образа хороший пайплайн использует `GITHUB_TOKEN`, который GitHub выдаёт запуску. У задачи публикации указано право `packages: write`; скачивание публичного образа обходится без токена. Пароль или токен в YAML не записываются. Образ публикуется в GHCR с тегом полного SHA коммита.
 
 ## Этапы хорошего пайплайна
 
 1. `quality`: `npm ci`, lint, тесты с отдельным MongoDB-сервисом.
 2. `image`: сборка хорошего Dockerfile с кешем слоёв, отчёт Trivy по HIGH/CRITICAL, блокировка выпуска при CRITICAL, публикация образа в GHCR.
 3. `deploy-smoke`: новый образ из GHCR запускается через compose на машине CI, затем `curl` проверяет работающий API.
-4. `deploy-local`: после публикации и проверки на CI-машине self-hosted runner с меткой `vot-labs` собирает на моём Windows-компьютере тот же коммит и запускает его. Этап включается переменной репозитория `ENABLE_LOCAL_DEPLOY=true` после регистрации runner и запуска Docker Desktop. GHCR-пакет остаётся приватным, поэтому локальный запуск использует образ `lab3-local:<SHA>` и [Compose-переопределение](docker-compose.local.yml) без скачивания из реестра. Локальный стек использует порты 8080 и 8443, чтобы не занять 80 и 443 у лаб 0–2.
+4. `deploy-local`: после публикации и проверки на CI-машине self-hosted runner с меткой `vot-labs` скачивает на моём Windows-компьютере тот же образ из публичного GHCR-пакета и запускает его через Compose. Тег образа — полный SHA коммита. Этап включается переменной репозитория `ENABLE_LOCAL_DEPLOY=true` после регистрации runner и запуска Docker Desktop. Локальный стек использует порты 8080 и 8443, чтобы не занять 80 и 443 у лаб 0–2.
 
 На pull request выполняются проверка, сборка и сканирование, но публикации и деплоя нет. При ошибке качества или скана зависимые задачи не стартуют.
 
@@ -38,14 +38,17 @@
 
 ## Локальный деплой
 
-Для обязательной демонстрации на своём компьютере нужен работающий Docker Desktop и зарегистрированный [self-hosted runner](https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/add-runners). Runner должен иметь метку `vot-labs` и быть запущен в момент push. Затем в настройках репозитория создайте переменную Actions `ENABLE_LOCAL_DEPLOY=true`. После успешного прогона откройте `https://lab.localhost:8443` и приложите вывод шага `Check local service`. Самоподписанный сертификат для этого адреса ожидаем; `curl` в проверке использует `-k`. Пока runner не зарегистрирован, этот этап пропускается; зелёный `deploy-smoke` подтверждает запуск только на CI-машине. Проверить локальную сборку вручную можно так:
+Для демонстрации на своём компьютере нужен работающий Docker Desktop и зарегистрированный [self-hosted runner](https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/add-runners). Runner должен иметь метку `vot-labs` и быть запущен в момент push. Затем в настройках репозитория создайте переменную Actions `ENABLE_LOCAL_DEPLOY=true`. После успешного прогона откройте `https://lab.localhost:8443` и приложите вывод шага `Check local service`. Самоподписанный сертификат для этого адреса ожидаем; `curl` в проверке использует `-k`. Пока runner не зарегистрирован, этот этап пропускается; зелёный `deploy-smoke` подтверждает запуск только на CI-машине. Проверить скачивание и запуск опубликованного образа вручную можно так:
 
 ```powershell
-$env:IMAGE = 'lab3-local:manual'
+$env:IMAGE = "ghcr.io/stanevko-ilya/devops-labs-vot:$(git rev-parse HEAD)"
 $env:LAB3_HTTP_PORT = '8080'
 $env:LAB3_HTTPS_PORT = '8443'
-docker build -f Dockerfile -t $env:IMAGE .
-docker compose -f lab3/docker-compose.deploy.yml -f lab3/docker-compose.local.yml -p vot-labs up -d --build
+$env:DOCKER_CONFIG = Join-Path $env:TEMP 'vot-ghcr-anonymous'
+New-Item -ItemType Directory -Path $env:DOCKER_CONFIG -Force | Out-Null
+Set-Content -LiteralPath (Join-Path $env:DOCKER_CONFIG 'config.json') -Value '{"auths":{}}' -Encoding ascii
+docker pull $env:IMAGE
+docker compose -f lab3/docker-compose.deploy.yml -p vot-labs up -d --build
 curl.exe --noproxy '*' -ksSf --resolve lab.localhost:8443:127.0.0.1 https://lab.localhost:8443/api/ping
 ```
 

@@ -90,17 +90,12 @@ jobs:
         runs-on: ubuntu-24.04
         permissions:
             contents: read
-            packages: read
         env:
             IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
         steps:
             - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
             - name: Start published image with compose
-              env:
-                  GH_TOKEN: ${{ github.token }}
-              run: |
-                  printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-                  docker compose -f lab3/docker-compose.deploy.yml up -d --build
+              run: docker compose -f lab3/docker-compose.deploy.yml up -d --build
             - name: Check the deployed service
               run: |
                   for i in $(seq 1 60); do
@@ -125,17 +120,20 @@ jobs:
         permissions:
             contents: read
         env:
-            IMAGE: lab3-local:${{ github.sha }}
+            IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
             LAB3_HTTP_PORT: '8080'
             LAB3_HTTPS_PORT: '8443'
         steps:
             - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-            - name: Build and deploy checked commit locally
+            - name: Pull and deploy published image locally
               shell: powershell
               run: |
-                  docker build -f Dockerfile -t $env:IMAGE .
+                  $env:DOCKER_CONFIG = Join-Path $env:RUNNER_TEMP 'docker-anonymous'
+                  New-Item -ItemType Directory -Path $env:DOCKER_CONFIG -Force | Out-Null
+                  Set-Content -LiteralPath (Join-Path $env:DOCKER_CONFIG 'config.json') -Value '{"auths":{}}' -Encoding ascii
+                  docker pull $env:IMAGE
                   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                  docker compose -f lab3/docker-compose.deploy.yml -f lab3/docker-compose.local.yml -p vot-labs up -d --build
+                  docker compose -f lab3/docker-compose.deploy.yml -p vot-labs up -d --build
                   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             - name: Check local service
               shell: powershell
@@ -144,10 +142,10 @@ jobs:
                     & curl.exe --noproxy '*' -ksSf --resolve lab.localhost:8443:127.0.0.1 https://lab.localhost:8443/api/ping
                     if ($LASTEXITCODE -eq 0) {
                       Write-Host "`nLocal service responds on https://lab.localhost:8443"
-                      docker compose -f lab3/docker-compose.deploy.yml -f lab3/docker-compose.local.yml -p vot-labs ps
+                      docker compose -f lab3/docker-compose.deploy.yml -p vot-labs ps
                       exit $LASTEXITCODE
                     }
                     Start-Sleep -Seconds 2
                   }
-                  docker compose -f lab3/docker-compose.deploy.yml -f lab3/docker-compose.local.yml -p vot-labs logs
+                  docker compose -f lab3/docker-compose.deploy.yml -p vot-labs logs
                   exit 1

@@ -1,7 +1,0 @@
-# Локальный runner уже собрал образ из проверенного коммита.
-# Не обращаться к приватному GHCR при запуске этого стека.
-services:
-    backend-a:
-        pull_policy: never
-    backend-b:
-        pull_policy: never
