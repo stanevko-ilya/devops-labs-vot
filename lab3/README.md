@@ -19,7 +19,7 @@
 1. `quality`: `npm ci`, lint, тесты с отдельным MongoDB-сервисом.
 2. `image`: сборка хорошего Dockerfile с кешем слоёв, отчёт Trivy по HIGH/CRITICAL, блокировка выпуска при CRITICAL, публикация образа в GHCR.
 3. `deploy-smoke`: новый образ из GHCR запускается через compose на машине CI, затем `curl` проверяет работающий API.
-4. `deploy-local`: тот же образ разворачивается на этом Windows-компьютере через self-hosted runner с меткой `vot-labs`. Этап включается переменной репозитория `ENABLE_LOCAL_DEPLOY=true` после регистрации runner и запуска Docker Desktop. Локальный стек использует порты 8080 и 8443, чтобы не занять 80 и 443 у лаб 0–2.
+4. `deploy-local`: после публикации и проверки на CI-машине self-hosted runner с меткой `vot-labs` собирает на моём Windows-компьютере тот же коммит и запускает его. Этап включается переменной репозитория `ENABLE_LOCAL_DEPLOY=true` после регистрации runner и запуска Docker Desktop. GHCR-пакет остаётся приватным, поэтому локальный запуск использует образ `lab3-local:<SHA>` и [Compose-переопределение](docker-compose.local.yml) без скачивания из реестра. Локальный стек использует порты 8080 и 8443, чтобы не занять 80 и 443 у лаб 0–2.
 
 На pull request выполняются проверка, сборка и сканирование, но публикации и деплоя нет. При ошибке качества или скана зависимые задачи не стартуют.
 
@@ -33,11 +33,22 @@
 
 | Версия образа | HIGH | CRITICAL | Итог gate |
 | --- | ---: | ---: | --- |
-| Старый тяжёлый образ | после прогона | после прогона | после прогона |
-| Исправленный лёгкий образ | после прогона | после прогона | после прогона |
+| `node:18.0.0-bullseye`, [красный прогон](https://github.com/stanevko-ilya/devops-labs-vot/actions/runs/40216902573) | 3669 | 294 | Выпуск остановлен, публикация и деплой пропущены |
+| `node:22.23.3-alpine3.24`, [скан исправленного образа](https://github.com/stanevko-ilya/devops-labs-vot/actions/runs/40218626861/job/121245248142) | 20 | 0 | Скан пройден, образ опубликован |
 
 ## Локальный деплой
 
-Для обязательной демонстрации на своём компьютере нужен работающий Docker Desktop и зарегистрированный [self-hosted runner](https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/add-runners). Runner должен иметь метку `vot-labs` и быть запущен в момент push. Затем в настройках репозитория создайте переменную Actions `ENABLE_LOCAL_DEPLOY=true`. После успешного прогона откройте `https://lab.localhost:8443` и приложите вывод шага `Check local service`. Самоподписанный сертификат для этого адреса ожидаем; `curl` в проверке использует `-k`. Пока runner не зарегистрирован, этот этап пропускается; зелёный `deploy-smoke` подтверждает запуск только на CI-машине.
+Для обязательной демонстрации на своём компьютере нужен работающий Docker Desktop и зарегистрированный [self-hosted runner](https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/add-runners). Runner должен иметь метку `vot-labs` и быть запущен в момент push. Затем в настройках репозитория создайте переменную Actions `ENABLE_LOCAL_DEPLOY=true`. После успешного прогона откройте `https://lab.localhost:8443` и приложите вывод шага `Check local service`. Самоподписанный сертификат для этого адреса ожидаем; `curl` в проверке использует `-k`. Пока runner не зарегистрирован, этот этап пропускается; зелёный `deploy-smoke` подтверждает запуск только на CI-машине. Проверить локальную сборку вручную можно так:
+
+```powershell
+$env:IMAGE = 'lab3-local:manual'
+$env:LAB3_HTTP_PORT = '8080'
+$env:LAB3_HTTPS_PORT = '8443'
+docker build -f Dockerfile -t $env:IMAGE .
+docker compose -f lab3/docker-compose.deploy.yml -f lab3/docker-compose.local.yml -p vot-labs up -d --build
+curl.exe --noproxy '*' -ksSf --resolve lab.localhost:8443:127.0.0.1 https://lab.localhost:8443/api/ping
+```
+
+Сервису после старта MongoDB и nginx нужно несколько секунд, поэтому при первом запросе может быть 502; шаг CI ждёт и повторяет запрос.
 
 Репозиторий публичный, поэтому локальный runner лучше держать включённым только на время своей демонстрации и выключить после неё. [Документация GitHub](https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/add-runners) отдельно предупреждает о рисках self-hosted runner для публичных репозиториев.
