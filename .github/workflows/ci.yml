@@ -136,9 +136,24 @@ jobs:
               env:
                   GH_TOKEN: ${{ github.token }}
               run: |
-                  $env:GH_TOKEN | docker login ghcr.io -u $env:GITHUB_ACTOR --password-stdin
+                  $env:DOCKER_CONFIG = Join-Path $env:RUNNER_TEMP 'lab3-docker-auth'
+                  New-Item -ItemType Directory -Path $env:DOCKER_CONFIG -Force | Out-Null
+                  $login = New-Object System.Diagnostics.ProcessStartInfo
+                  $login.FileName = (Get-Command docker.exe).Source
+                  $login.Arguments = "login ghcr.io -u $env:GITHUB_ACTOR --password-stdin"
+                  $login.UseShellExecute = $false
+                  $login.RedirectStandardInput = $true
+                  $process = New-Object System.Diagnostics.Process
+                  $process.StartInfo = $login
+                  [void]$process.Start()
+                  $process.StandardInput.Write($env:GH_TOKEN)
+                  $process.StandardInput.Close()
+                  $process.WaitForExit()
+                  if ($process.ExitCode -ne 0) { exit $process.ExitCode }
                   docker compose -f lab3/docker-compose.deploy.yml -p vot-labs up -d --build
-                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                  $composeExit = $LASTEXITCODE
+                  docker logout ghcr.io | Out-Null
+                  if ($composeExit -ne 0) { exit $composeExit }
             - name: Check local service
               shell: powershell
               run: |
