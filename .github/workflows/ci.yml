@@ -124,36 +124,19 @@ jobs:
         runs-on: [self-hosted, windows, x64, vot-labs]
         permissions:
             contents: read
-            packages: read
         env:
-            IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
+            IMAGE: lab3-local:${{ github.sha }}
             LAB3_HTTP_PORT: '8080'
             LAB3_HTTPS_PORT: '8443'
         steps:
             - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-            - name: Deploy published image
+            - name: Build and deploy checked commit locally
               shell: powershell
-              env:
-                  GH_TOKEN: ${{ github.token }}
               run: |
-                  $env:DOCKER_CONFIG = Join-Path $env:RUNNER_TEMP 'lab3-docker-auth'
-                  New-Item -ItemType Directory -Path $env:DOCKER_CONFIG -Force | Out-Null
-                  $login = New-Object System.Diagnostics.ProcessStartInfo
-                  $login.FileName = (Get-Command docker.exe).Source
-                  $login.Arguments = "login ghcr.io -u $env:GITHUB_ACTOR --password-stdin"
-                  $login.UseShellExecute = $false
-                  $login.RedirectStandardInput = $true
-                  $process = New-Object System.Diagnostics.Process
-                  $process.StartInfo = $login
-                  [void]$process.Start()
-                  $process.StandardInput.Write($env:GH_TOKEN)
-                  $process.StandardInput.Close()
-                  $process.WaitForExit()
-                  if ($process.ExitCode -ne 0) { exit $process.ExitCode }
-                  docker compose -f lab3/docker-compose.deploy.yml -p vot-labs up -d --build
-                  $composeExit = $LASTEXITCODE
-                  docker logout ghcr.io | Out-Null
-                  if ($composeExit -ne 0) { exit $composeExit }
+                  docker build -f Dockerfile -t $env:IMAGE .
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                  docker compose -f lab3/docker-compose.deploy.yml -f lab3/docker-compose.local.yml -p vot-labs up -d --build
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             - name: Check local service
               shell: powershell
               run: |
@@ -161,10 +144,10 @@ jobs:
                     & curl.exe --noproxy '*' -ksSf --resolve lab.localhost:8443:127.0.0.1 https://lab.localhost:8443/api/ping
                     if ($LASTEXITCODE -eq 0) {
                       Write-Host "`nLocal service responds on https://lab.localhost:8443"
-                      docker compose -f lab3/docker-compose.deploy.yml -p vot-labs ps
+                      docker compose -f lab3/docker-compose.deploy.yml -f lab3/docker-compose.local.yml -p vot-labs ps
                       exit $LASTEXITCODE
                     }
                     Start-Sleep -Seconds 2
                   }
-                  docker compose -f lab3/docker-compose.deploy.yml -p vot-labs logs
+                  docker compose -f lab3/docker-compose.deploy.yml -f lab3/docker-compose.local.yml -p vot-labs logs
                   exit 1
