@@ -132,7 +132,7 @@ jobs:
         steps:
             - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
             - name: Deploy published image
-              shell: pwsh
+              shell: powershell
               env:
                   GH_TOKEN: ${{ github.token }}
               run: |
@@ -140,7 +140,7 @@ jobs:
                   docker compose -f lab3/docker-compose.deploy.yml -p vot-labs up -d --build
                   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             - name: Check local service
-              shell: pwsh
+              shell: powershell
               run: |
                   for ($i = 0; $i -lt 60; $i++) {
                     & curl.exe --noproxy '*' -ksSf --resolve lab.localhost:8443:127.0.0.1 https://lab.localhost:8443/api/ping
